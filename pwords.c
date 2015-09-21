@@ -12,7 +12,7 @@ typedef struct dict {
   int count;
   struct dict *next;
 } dict_t;
-
+  dict_t *d;
 char *make_word( char *word ) {
   return strcpy( malloc( strlen( word )+1 ), word );
 }
@@ -76,13 +76,13 @@ int get_word( char *buf, int n, FILE *infile) {
 }
 
 #define MAXWORD 1024
-dict_t *words( FILE *infile ) {
-  dict_t *wd = NULL;
+void *words( FILE *infile ) {
+  //dict_t *wd = NULL;
   char wordbuf[MAXWORD];
   while( get_word( wordbuf, MAXWORD, infile ) ) {
-    wd = insert_word(wd, wordbuf); // add to dict
+    d = insert_word(d, wordbuf); // add to dict
   }
-  return wd;
+  //return wd;
 }
 
 int main( int argc, char *argv[] ) {
@@ -91,7 +91,7 @@ if(pthread_mutex_init(&lock,NULL)!=0){
 	printf("Mutex initialization failed!!\n");
    return 1;
 }
-  dict_t *d = NULL;
+d= NULL;
   FILE *infile = stdin;
   if (argc >= 2) {
     infile = fopen (argv[1],"r");
@@ -100,30 +100,31 @@ if(pthread_mutex_init(&lock,NULL)!=0){
     printf("Unable to open %s\n",argv[1]);
     exit( EXIT_FAILURE );
   }
-  d = words( infile );
+ // d = words( infile );
 
     pthread_t t1,t2,t3,t4;				// this is our thread identifier
 	
-       pthread_create(&t1,NULL,print_dict,d);
+       		pthread_create(&t1,NULL,&words,infile);
     
+	 	pthread_join(t1,NULL);
+
+	    	pthread_create(&t2,NULL,&words,infile);
+            	pthread_join(t2,NULL); 
+
+		 pthread_create(&t3,NULL,&words,infile);
+	 	 pthread_join(t3,NULL); 
+    			
 
 
-	    pthread_create(&t2,NULL,print_dict,d);
+		 pthread_create(&t4,NULL,&words,infile);
+	  	 pthread_join(t4,NULL);
+
+   
 	
-
-
-		 pthread_create(&t3,NULL,print_dict,d);
-	 
-
-
-		 pthread_create(&t4,NULL,print_dict,d);
-	 
-	 pthread_join(t1,NULL);
-    pthread_join(t2,NULL); 
-    pthread_join(t3,NULL); 
-	 pthread_join(t4,NULL);
-
+print_dict( d );
 pthread_mutex_destroy(&lock);
+
+  
 	
 fclose( infile );
 }
